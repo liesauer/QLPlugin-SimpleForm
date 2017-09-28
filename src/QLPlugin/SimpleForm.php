@@ -11,28 +11,39 @@ class SimpleForm implements PluginContract
     public static function install(QueryList $querylist, ...$opts)
     {
         $querylist->use(AbsoluteUrl::class);
-        $querylist->bind('simpleForm', function ($url, $req_params = [], $post_params = [], ...$args) {
-            $req_params['method']   = strtolower($req_params['method'] ?? 'get');
-            $req_params['param']    = $req_params['param'] ?? [];
-            $req_params['setting']  = $req_params['setting'] ?? [];
-            $post_params['method']  = strtolower($post_params['method'] ?? 'post');
-            $post_params['param']   = $post_params['param'] ?? [];
-            $post_params['setting'] = $post_params['setting'] ?? [];
-            $method                 = $req_params['method'];
-            $post_method            = $post_params['method'];
-            $form                   = $this->$method($url, $req_params['param'], $req_params['setting'])->find('form');
+        $querylist->bind('simpleForm', function ($formUrl, $formSelector = '', $formParams = [], $postParams = [], ...$args) {
+            $formParams            = is_array($formParams) ? $formParams : [];
+            $formParams['method']  = isset($formParams['method']) ? strtolower($formParams['method']) : 'get';
+            $formParams['params']  = isset($formParams['params']) && is_array($formParams['params']) ? $formParams['params'] : [];
+            $formParams['options'] = isset($formParams['options']) && is_array($formParams['options']) ? $formParams['options'] : [];
+
+            $postParams            = is_array($postParams) ? $postParams : [];
+            $postParams['method']  = isset($postParams['method']) ? strtolower($postParams['method']) : 'post';
+            $postParams['params']  = isset($postParams['params']) && is_array($postParams['params']) ? $postParams['params'] : [];
+            $postParams['options'] = isset($postParams['options']) && is_array($postParams['options']) ? $postParams['options'] : [];
+
+            $formSelector = !is_string($formSelector) || empty($formSelector) ? 'form' : $formSelector;
+
+            $formMethod = $formParams['method'];
+            $postMethod = $postParams['method'];
+
+            if (($formMethod !== 'get' && $formMethod !== 'post') || ($postMethod !== 'get' && $postMethod !== 'post')) {
+                throw new \Exception('only method [get|post] supported.');
+            }
+
+            $form = $this->$formMethod($formUrl, $formParams['params'], $formParams['options'])->find($formSelector);
             // $inputs    = $form->find('input[name]');
             $action    = $form->attr('action');
             $formDatas = $form->serializeArray();
             $postDatas = [];
             foreach ($formDatas as $formData) {
-                if (isset($post_params['param'][$formData['name']])) {
-                    $postDatas[$formData['name']] = $post_params['param'][$formData['name']];
+                if (isset($postParams['params'][$formData['name']])) {
+                    $postDatas[$formData['name']] = $postParams['params'][$formData['name']];
                 } else {
                     $postDatas[$formData['name']] = $formData['value'];
                 }
             }
-            $html = $this->$post_method($this->absoluteUrlHelper($url, $action), $postDatas, $post_params['setting'])->getHtml();
+            $html = $this->$postMethod($this->absoluteUrlHelper($formUrl, $action), $postDatas, $postParams['options'])->getHtml();
 
             return $this->html($html);
         });
