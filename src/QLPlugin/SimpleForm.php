@@ -12,9 +12,15 @@ class SimpleForm implements PluginContract
     {
         $querylist->use(AbsoluteUrl::class);
         $querylist->bind('simpleForm', function ($url, $req_params = [], $post_params = [], ...$args) {
-            $req_params['method']  = strtolower($req_params['method'] ?? 'get');
-            $post_params['method'] = strtolower($post_params['method'] ?? 'get');
-            $form                  = ($this->$req_params['method'])($url, $req_params['param'], $req_params['setting'])->find('form');
+            $req_params['method']   = strtolower($req_params['method'] ?? 'get');
+            $req_params['param']    = $req_params['param'] ?? [];
+            $req_params['setting']  = $req_params['setting'] ?? [];
+            $post_params['method']  = strtolower($post_params['method'] ?? 'post');
+            $post_params['param']   = $post_params['param'] ?? [];
+            $post_params['setting'] = $post_params['setting'] ?? [];
+            $method                 = $req_params['method'];
+            $post_method            = $post_params['method'];
+            $form                   = $this->$method($url, $req_params['param'], $req_params['setting'])->find('form');
             // $inputs    = $form->find('input[name]');
             $action    = $form->attr('action');
             $formDatas = $form->serializeArray();
@@ -26,7 +32,9 @@ class SimpleForm implements PluginContract
                     $postDatas[$formData['name']] = $formData['value'];
                 }
             }
-            ($this->$post_params['method'])($this->absoluteUrlHelper($url, $action), $post_params['param'], $post_params['setting']);
+            $html = $this->$post_method($this->absoluteUrlHelper($url, $action), $postDatas, $post_params['setting'])->getHtml();
+
+            return $this->html($html);
         });
     }
 }
