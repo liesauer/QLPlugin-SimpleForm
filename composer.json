@@ -11,10 +11,10 @@
         }
     ],
     "require": {
+        "jaeger/querylist": "dev-master",
         "jaeger/querylist-absolute-url":"^4.0.0"
     },
     "require-dev": {
-        "jaeger/querylist": "dev-master"
     },
     "autoload": {
         "psr-4": {
