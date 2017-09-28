@@ -43,8 +43,9 @@ $username = $ql->simpleForm('https://github.com/login', '', [
 ])->find('.header-nav-current-user>.css-truncate-target')->text();
 
 if (!empty($username)) {
-    echo "welcome back, {$username}!";
+    echo "welcome back, {$username}!\n";
 } else {
-    echo 'login failed.';
+    $error = $ql->find('.flash-error>.container')->text();
+    echo "{$error}\n";
 }
 ```
